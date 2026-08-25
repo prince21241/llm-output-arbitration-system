@@ -1,0 +1,115 @@
+@import "@fontsource-variable/outfit";
+@import "@fontsource/ibm-plex-mono/400.css";
+@import "@fontsource/ibm-plex-mono/500.css";
+@import "@fontsource/ibm-plex-mono/600.css";
+@import "tailwindcss";
+
+:root {
+  --bg: #eceef1;
+  --bg-raised: #f7f8f9;
+  --bg-inset: #e4e6ea;
+  --text: #1a1c1f;
+  --text-muted: #5c6168;
+  --line: #d5d8de;
+  --accent: #0f766e;
+  --accent-fg: #f7f8f9;
+  --supported: #047857;
+  --incorrect: #b42318;
+  --uncertain: #b45309;
+  --focus: #0f766e;
+  --shadow: rgb(26 28 31 / 0.08);
+  --z-header: 20;
+  --z-overlay: 40;
+}
+
+html[data-theme="dark"] {
+  --bg: #121316;
+  --bg-raised: #1b1c20;
+  --bg-inset: #0e0f12;
+  --text: #f2f3f4;
+  --text-muted: #a7adb6;
+  --line: #2a2d33;
+  --accent: #2dd4bf;
+  --accent-fg: #102422;
+  --supported: #34d399;
+  --incorrect: #f87171;
+  --uncertain: #fbbf24;
+  --focus: #2dd4bf;
+  --shadow: rgb(0 0 0 / 0.35);
+}
+
+@theme inline {
+  --color-canvas: var(--bg);
+  --color-raised: var(--bg-raised);
+  --color-inset: var(--bg-inset);
+  --color-ink: var(--text);
+  --color-muted: var(--text-muted);
+  --color-line: var(--line);
+  --color-accent: var(--accent);
+  --color-accent-fg: var(--accent-fg);
+  --color-supported: var(--supported);
+  --color-incorrect: var(--incorrect);
+  --color-uncertain: var(--uncertain);
+  --color-focus: var(--focus);
+  --font-sans: "Outfit Variable", ui-sans-serif, system-ui, sans-serif;
+  --font-mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", monospace;
+  --radius-lg: 12px;
+  --radius-md: 8px;
+}
+
+html,
+body {
+  min-height: 100dvh;
+  background: var(--bg);
+  color: var(--text);
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: 16px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+#root {
+  min-height: 100dvh;
+}
+
+:focus {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+input,
+textarea,
+button {
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: color-mix(in srgb, var(--accent) 18%, transparent);
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  header {
+    backdrop-filter: none;
+    background: var(--bg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}

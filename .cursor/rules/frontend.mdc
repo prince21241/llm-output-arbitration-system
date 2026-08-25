@@ -1,0 +1,7 @@
+---
+description: Follow DESIGN.md and anti-slop skills for all frontend work.
+globs: frontend/**/*.{tsx,ts,css,html}
+alwaysApply: false
+---
+
+Read `DESIGN.md` before changing UI. Apply `.agents/skills/design-taste-frontend/SKILL.md` (anti-slop) and `.agents/skills/web-design-guidelines/SKILL.md` (a11y / interaction). This is a forensic evaluate workspace, not a marketing landing. No em-dashes. Phosphor icons only. Dual theme via CSS variables.

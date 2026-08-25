@@ -10,3 +10,14 @@ def test_health_endpoint_returns_ok(client: TestClient) -> None:
         "status": "ok",
         "service": "llm-output-arbitrator",
     }
+
+
+def test_cors_allows_local_frontend(client: TestClient) -> None:
+    response = client.options(
+        "/health",
+        headers={
+            "Origin": "http://127.0.0.1:5173",
+            "Access-Control-Request-Method": "GET",
+        },
+    )
+    assert response.headers.get("access-control-allow-origin") == "http://127.0.0.1:5173"

@@ -2,7 +2,7 @@
 
 Phase 1 backend for evaluating AI-generated answers. The service accepts a user question plus a model response, extracts factual claims, sends those claims to multiple judge models, compares their evaluations, and returns a structured **preliminary** confidence score.
 
-This repository currently implements **Phase 1 only**: a clean, async FastAPI pipeline with mock judges. There is no frontend, database, live web search, or paid model integration yet.
+This repository currently implements **Phase 1**: a FastAPI evaluation pipeline with mock judges, plus a React workspace that calls it. There is no database, live web search, or paid model integration yet.
 
 ## Purpose
 
@@ -198,8 +198,19 @@ Exact floats depend on the scoring rule, but the shape is stable:
 - Judges are deterministic mocks with a tiny knowledge table.
 - There is no web search, citation check, or source retrieval.
 - Consensus scoring is a transparent formula, not a trained model.
-- No authentication, persistence, caching, rate limits, or frontend.
+- No authentication, persistence, caching, or rate limits.
 - Provider API keys are placeholders and unused.
+
+## Frontend
+
+From `frontend/`, with the API already running on port 8000:
+
+```bash
+npm install
+npm run dev
+```
+
+Open [http://127.0.0.1:5173](http://127.0.0.1:5173). The workspace posts to `POST /api/v1/evaluate`.
 
 ## Planned roadmap
 
@@ -226,7 +237,7 @@ Phase 7
 Probability calibration and benchmark evaluation
 
 Phase 8
-React + TypeScript frontend
+Frontend polish, auth, and persistence
 
 Phase 9
 PostgreSQL, caching, rate limits, cost tracking
