@@ -6,6 +6,7 @@ import logging
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 
+from app.auth import require_auth
 from app.pipeline.evaluator import EvaluationError, Evaluator
 from app.schemas.evaluation import EvaluateResponse
 from app.schemas.request import EvaluateRequest
@@ -34,8 +35,10 @@ def get_evaluator(request: Request) -> Evaluator:
 async def evaluate_answer(
     payload: EvaluateRequest,
     evaluator: Evaluator = Depends(get_evaluator),
+    user_id: str | None = Depends(require_auth),
 ) -> EvaluateResponse:
     """Extract claims, collect judge opinions, and return consensus."""
+    del user_id
     try:
         return await evaluator.evaluate(payload.question, payload.answer)
     except EvaluationError as exc:

@@ -1,4 +1,4 @@
-import { CaretDown } from "@phosphor-icons/react";
+import { BookOpen, CaretDown } from "@phosphor-icons/react";
 import type { Claim, EvaluateResponse, JudgeResult } from "../lib/types";
 import {
   judgeLabel,
@@ -73,6 +73,29 @@ function ClaimExhibit({
       <p className="mt-2 max-w-[65ch] text-base leading-relaxed text-ink">
         {claim.text}
       </p>
+      {(claim.evidence ?? []).length > 0 ? (
+        <ul className="mt-4 grid gap-2">
+          {(claim.evidence ?? []).map((item) => (
+            <li key={item.url} className="rounded-md border border-line px-3 py-2">
+              <a
+                href={item.url}
+                target="_blank"
+                rel="noreferrer noopener"
+                className="inline-flex min-h-6 items-center gap-2 text-sm font-medium text-ink"
+              >
+                <BookOpen size={16} weight="regular" aria-hidden="true" />
+                {item.title}
+              </a>
+              <p className="mt-1 max-w-[65ch] text-sm leading-relaxed text-muted">
+                {item.snippet}
+              </p>
+              <p className="mt-1 font-mono text-xs tabular-nums text-muted">
+                {item.source} overlap {percent(item.overlap)}
+              </p>
+            </li>
+          ))}
+        </ul>
+      ) : null}
       {consensus ? (
         <p className="mt-3 font-mono text-xs tabular-nums text-muted">
           support {percent(consensus.support_probability)}

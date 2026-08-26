@@ -4,8 +4,25 @@ export function percent(value: number): string {
   return `${(value * 100).toFixed(1)}%`;
 }
 
+const JUDGE_LABELS: Record<string, string> = {
+  openai: "OpenAI",
+  claude: "Claude",
+  gemini: "Gemini",
+  mock_judge_a: "Mock A",
+  mock_judge_b: "Mock B",
+};
+
 export function judgeLabel(id: string): string {
+  if (JUDGE_LABELS[id]) return JUDGE_LABELS[id];
   return id.replaceAll("_", " ").replace(/\b[a-z]/g, (char) => char.toUpperCase());
+}
+
+export function judgeRoster(mode: "live" | "mock" | undefined, judges: string[]): string {
+  if (mode === "mock" || judges.every((id) => id.startsWith("mock_"))) {
+    return "Mock judges";
+  }
+  if (!judges.length) return "Live judges";
+  return judges.map(judgeLabel).join(", ");
 }
 
 export function verdictLabel(verdict: Verdict): string {

@@ -1,10 +1,19 @@
 export type Verdict = "supported" | "incorrect" | "uncertain";
 export type ClaimType = "factual" | "numerical" | "date" | "unknown";
 
+export type Evidence = {
+  title: string;
+  url: string;
+  snippet: string;
+  source: string;
+  overlap: number;
+};
+
 export type Claim = {
   id: string;
   text: string;
   type: ClaimType;
+  evidence?: Evidence[];
 };
 
 export type JudgeResult = {
@@ -42,9 +51,15 @@ export type EvaluateResponse = {
   consensus: OverallConsensus;
   final_confidence: number;
   verdict: Verdict;
+  scorer?: "rule" | "ml" | string;
 };
 
 export type HealthResponse = {
   status: string;
   service: string;
+  mode?: "live" | "mock";
+  judges?: string[];
+  scorer?: string;
+  evidence?: boolean;
+  auth?: boolean;
 };

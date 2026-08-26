@@ -9,6 +9,11 @@ def test_health_endpoint_returns_ok(client: TestClient) -> None:
     assert response.json() == {
         "status": "ok",
         "service": "llm-output-arbitrator",
+        "mode": "mock",
+        "judges": ["mock_judge_a", "mock_judge_b"],
+        "scorer": "rule",
+        "evidence": False,
+        "auth": False,
     }
 
 

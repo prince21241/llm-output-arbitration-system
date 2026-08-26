@@ -1,19 +1,19 @@
 # LLM Output Arbitration System
 
-Phase 1 backend for evaluating AI-generated answers. The service accepts a user question plus a model response, extracts factual claims, sends those claims to multiple judge models, compares their evaluations, and returns a structured **preliminary** confidence score.
+Backend for evaluating AI-generated answers. The service accepts a user question plus a model response, extracts factual claims, retrieves Wikipedia evidence, sends those claims to judge models, and returns a structured **preliminary** confidence score from either a rule formula or a trained model.
 
-This repository currently implements **Phase 1**: a FastAPI evaluation pipeline with mock judges, plus a React workspace that calls it. There is no database, live web search, or paid model integration yet.
+This repository currently implements **Phases 1-3 plus a first ML scorer**: FastAPI pipeline, optional OpenAI / Claude / Gemini judges, Wikipedia evidence, a seed labeled set, and `MLConfidenceModel`. There is no database yet. Provider API keys are still optional.
 
 ## Purpose
 
 Language models often state facts with more certainty than the evidence supports. This project treats that as an arbitration problem:
 
 1. Break an answer into checkable claims.
-2. Collect independent verdicts from several judges.
-3. Combine those verdicts into an agreement profile and a preliminary confidence score.
-4. Keep every stage replaceable so later phases can add real models, evidence retrieval, and a trained confidence estimator.
+2. Retrieve short sources for each claim.
+3. Collect independent verdicts from several judges.
+4. Combine those verdicts (and evidence overlap) into a preliminary confidence score.
 
-## Current Phase 1 architecture
+## Current architecture
 
 ```text
 Question + Answer
@@ -22,10 +22,13 @@ Question + Answer
  ClaimExtractor          (heuristic sentence split + type tags)
         │
         ▼
+ EvidenceRetriever       (Wikipedia search snippets)
+        │
+        ▼
    JudgeRouter           (asyncio.gather over BaseJudge implementations)
         │
         ▼
- ConsensusEngine         (rule-based signed-confidence scoring)
+ ConsensusEngine         (RuleBasedScorer or MLConfidenceModel)
         │
         ▼
     Evaluator            (overall weighted score + verdict)
@@ -37,8 +40,9 @@ Question + Answer
 Key design choices:
 
 - FastAPI routes do not contain pipeline logic.
-- Judges implement `BaseJudge.evaluate_claim`. Phase 1 uses `MockJudgeA` and `MockJudgeB`. Later providers (`OpenAIJudge`, `ClaudeJudge`, `GeminiJudge`, `GrokJudge`, `DeepSeekJudge`, `KimiJudge`) can be registered on `JudgeRouter` without rewriting the evaluator.
-- Scoring lives in `RuleBasedScorer`. A future `MLConfidenceModel.predict(features)` can replace it through the same `support_probability` contract.
+- Judges implement `BaseJudge.evaluate_claim`. `build_judges` registers `OpenAIJudge`, `ClaudeJudge`, and `GeminiJudge` when their keys are present. Otherwise it uses `MockJudgeA` and `MockJudgeB`.
+- Evidence is Wikipedia-only in this phase. Failures return an empty list so judging still runs.
+- Scoring implements `support_probability`. `MLConfidenceModel` loads `app/ml/artifacts/confidence_model.joblib` when `USE_ML_SCORER=true`. Otherwise `RuleBasedScorer` is used. Retrain with `python -m app.ml.train` from `backend/`.
 - Verdict thresholds (`0.75` supported / `0.35` incorrect) are configuration, not scattered constants.
 
 ## Installation
@@ -69,7 +73,7 @@ source .venv/bin/activate
 pip install -r requirements.txt
 ```
 
-Copy environment placeholders if you want a local `.env` file. API keys are **not** required for Phase 1.
+Copy environment placeholders if you want a local `.env` file. API keys are optional. Empty keys keep the mock judges.
 
 ```bash
 cp .env.example .env
@@ -80,6 +84,10 @@ On Windows PowerShell:
 ```powershell
 Copy-Item .env.example .env
 ```
+
+Set any combination of `OPENAI_API_KEY`, `ANTHROPIC_API_KEY`, and `GEMINI_API_KEY`. Cheap defaults are `gpt-4o-mini`, `claude-haiku-4-5`, and `gemini-2.5-flash`. Override with `OPENAI_MODEL`, `ANTHROPIC_MODEL`, and `GEMINI_MODEL`. `USE_MOCK_JUDGES=true` forces mocks even when keys are set.
+
+`GET /health` reports `mode` (`live` or `mock`) and the registered `judges` list. It never returns API keys.
 
 ## Start FastAPI
 
@@ -99,7 +107,13 @@ From `backend/`:
 pytest
 ```
 
-Tests use in-process mock judges only. They do not need internet access or API keys.
+Tests use in-process mock judges and mocked HTTP. They do not need internet access or API keys.
+
+Retrain the confidence model from `backend/`:
+
+```bash
+python -m app.ml.train
+```
 
 ## Example API request
 
@@ -132,13 +146,15 @@ curl -s http://127.0.0.1:8000/health
 ```json
 {
   "status": "ok",
-  "service": "llm-output-arbitrator"
+  "service": "llm-output-arbitrator",
+  "mode": "mock",
+  "judges": ["mock_judge_a", "mock_judge_b"]
 }
 ```
 
 ## Example response
 
-Exact floats depend on the scoring rule, but the shape is stable:
+Exact floats depend on the scoring rule, but the shape is stable. With no API keys, judge names are the mocks:
 
 ```json
 {
@@ -195,11 +211,11 @@ Exact floats depend on the scoring rule, but the shape is stable:
 ## Current limitations
 
 - Claim extraction is rule-based (sentence splitting + regex), not an LLM.
-- Judges are deterministic mocks with a tiny knowledge table.
-- There is no web search, citation check, or source retrieval.
-- Consensus scoring is a transparent formula, not a trained model.
+- Evidence is Wikipedia search snippets, not a full citation graph. Paid search is still later.
+- Live judges can read those snippets when keys are set. With mock judges, evidence is shown but does not change the hard-coded votes.
+- The ML scorer is trained on synthetic vote patterns plus a small labeled seed set. Retrain after live judges produce real labels.
 - No authentication, persistence, caching, or rate limits.
-- Provider API keys are placeholders and unused.
+- Empty provider keys fall back to deterministic mocks with a tiny knowledge table.
 
 ## Frontend
 
@@ -222,19 +238,19 @@ Phase 2
 Real OpenAI / Claude / Gemini integrations
 
 Phase 3
-Evidence retrieval and source verification
+Evidence retrieval and source verification (Wikipedia, current)
 
 Phase 4
 Grok / DeepSeek / Kimi integrations
 
 Phase 5
-Evaluation dataset creation
+Evaluation dataset creation (seed file started)
 
 Phase 6
-ML confidence model using Logistic Regression and XGBoost/LightGBM
+ML confidence model (logistic + histogram gradient boosting, current)
 
 Phase 7
-Probability calibration and benchmark evaluation
+Probability calibration and benchmark evaluation (sigmoid calibration included)
 
 Phase 8
 Frontend polish, auth, and persistence

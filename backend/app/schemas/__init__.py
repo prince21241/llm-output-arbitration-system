@@ -1,6 +1,6 @@
 """Pydantic schemas for requests, claims, judges, and evaluations."""
 
-from app.schemas.claim import Claim, ClaimType
+from app.schemas.claim import Claim, ClaimType, Evidence
 from app.schemas.evaluation import (
     ClaimConsensus,
     EvaluateResponse,
@@ -13,6 +13,7 @@ __all__ = [
     "Claim",
     "ClaimConsensus",
     "ClaimType",
+    "Evidence",
     "EvaluateRequest",
     "EvaluateResponse",
     "JudgeResult",

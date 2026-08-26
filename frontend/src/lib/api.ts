@@ -13,10 +13,18 @@ export class ApiError extends Error {
 export async function evaluateAnswer(
   question: string,
   answer: string,
+  token?: string | null,
 ): Promise<EvaluateResponse> {
+  const headers: Record<string, string> = {
+    "Content-Type": "application/json",
+  };
+  if (token) {
+    headers.Authorization = `Bearer ${token}`;
+  }
+
   const response = await fetch("/api/v1/evaluate", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers,
     body: JSON.stringify({ question, answer }),
   });
 
@@ -58,6 +66,7 @@ async function readApiError(response: Response): Promise<string> {
     /* use status fallback */
   }
 
+  if (response.status === 401) return "Sign in to evaluate answers.";
   if (response.status === 422) return "Check the question and answer fields.";
   if (response.status >= 500) return "The evaluator failed. Try again.";
   return "Evaluation did not complete. Try again.";

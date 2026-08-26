@@ -9,7 +9,7 @@ from app.config import Settings
 from app.schemas.claim import Claim
 from app.schemas.evaluation import ClaimConsensus, OverallConsensus
 from app.schemas.judge import JudgeResult
-from app.utils.scoring import RuleBasedScorer, clamp, verdict_from_confidence
+from app.utils.scoring import ConfidenceScorer, RuleBasedScorer, clamp, verdict_from_confidence
 
 
 class ConsensusEngine:
@@ -18,7 +18,7 @@ class ConsensusEngine:
     def __init__(
         self,
         settings: Settings,
-        scorer: RuleBasedScorer | None = None,
+        scorer: ConfidenceScorer | None = None,
     ) -> None:
         self._settings = settings
         self._scorer = scorer or RuleBasedScorer()
@@ -81,7 +81,7 @@ class ConsensusEngine:
         )
         agreement = max(supporting, incorrect, uncertain) / total if total else 0.0
         disagreement = self._disagreement(supporting, incorrect)
-        support_probability = self._scorer.support_probability(results)
+        support_probability = self._scorer.support_probability(results, claim)
         verdict = verdict_from_confidence(
             support_probability,
             self._settings.supported_threshold,

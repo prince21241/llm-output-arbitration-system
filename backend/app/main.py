@@ -15,29 +15,54 @@ from starlette.exceptions import HTTPException as StarletteHTTPException
 from app.api.evaluate import router as evaluate_router
 from app.config import Settings, get_settings
 from app.judges.base import BaseJudge
-from app.judges.mock_judge_a import MockJudgeA
-from app.judges.mock_judge_b import MockJudgeB
+from app.judges.factory import build_judges
+from app.ml.model import MLConfidenceModel
 from app.pipeline.claim_extractor import ClaimExtractor
 from app.pipeline.consensus import ConsensusEngine
 from app.pipeline.evaluator import Evaluator
+from app.pipeline.evidence import EvidenceRetriever, NullEvidenceRetriever, WikipediaEvidenceRetriever
 from app.pipeline.judge_router import JudgeRouter
-from app.utils.scoring import RuleBasedScorer
+from app.utils.scoring import ConfidenceScorer, RuleBasedScorer
 
 logger = logging.getLogger(__name__)
+
+
+def build_scorer(settings: Settings) -> tuple[ConfidenceScorer, str]:
+    """Load the ML scorer when enabled and an artifact exists, else the rule formula."""
+    if settings.use_ml_scorer:
+        model = MLConfidenceModel.load()
+        if model is not None:
+            return model, "ml"
+    return RuleBasedScorer(), "rule"
+
+
+def build_evidence_retriever(
+    settings: Settings,
+    evidence_retriever: EvidenceRetriever | None = None,
+) -> EvidenceRetriever:
+    if evidence_retriever is not None:
+        return evidence_retriever
+    if settings.enable_evidence:
+        return WikipediaEvidenceRetriever(language=settings.wikipedia_language)
+    return NullEvidenceRetriever()
 
 
 def build_default_evaluator(
     settings: Settings | None = None,
     judges: Sequence[BaseJudge] | None = None,
+    evidence_retriever: EvidenceRetriever | None = None,
 ) -> Evaluator:
-    """Wire Phase 1 defaults. Swap judges or scorer here, not in routes."""
+    """Wire pipeline defaults. Swap judges or scorer here, not in routes."""
     resolved = settings or get_settings()
-    router = JudgeRouter(judges=list(judges) if judges is not None else [MockJudgeA(), MockJudgeB()])
+    selected = list(judges) if judges is not None else build_judges(resolved)
+    scorer, scorer_name = build_scorer(resolved)
     return Evaluator(
         claim_extractor=ClaimExtractor(),
-        judge_router=router,
-        consensus_engine=ConsensusEngine(settings=resolved, scorer=RuleBasedScorer()),
+        judge_router=JudgeRouter(judges=selected),
+        consensus_engine=ConsensusEngine(settings=resolved, scorer=scorer),
         settings=resolved,
+        evidence_retriever=build_evidence_retriever(resolved, evidence_retriever),
+        scorer_name=scorer_name,
     )
 
 
@@ -51,13 +76,20 @@ def create_app(evaluator: Evaluator | None = None) -> FastAPI:
 
     app = FastAPI(
         title="LLM Output Arbitration System",
-        version="0.1.0",
+        version="0.3.0",
         description=(
-            "Phase 1 backend: extract claims from an AI answer, collect mock "
-            "judge evaluations, and return a preliminary confidence score."
+            "Extract claims, retrieve Wikipedia evidence, collect judge "
+            "evaluations, and score them with a rule formula or a trained "
+            "confidence model."
         ),
     )
-    app.state.evaluator = evaluator or build_default_evaluator(settings)
+    resolved_evaluator = evaluator or build_default_evaluator(settings)
+    app.state.evaluator = resolved_evaluator
+    logger.info(
+        "Registered judges (%s): %s",
+        resolved_evaluator.mode,
+        ", ".join(resolved_evaluator.judge_names) or "(none)",
+    )
     app.add_middleware(
         CORSMiddleware,
         allow_origins=[
@@ -66,12 +98,21 @@ def create_app(evaluator: Evaluator | None = None) -> FastAPI:
         ],
         allow_credentials=True,
         allow_methods=["GET", "POST", "OPTIONS"],
-        allow_headers=["Content-Type"],
+        allow_headers=["Content-Type", "Authorization"],
     )
 
     @app.get("/health", tags=["health"])
-    async def health() -> dict[str, str]:
-        return {"status": "ok", "service": settings.service_name}
+    async def health() -> dict[str, Any]:
+        evaluator: Evaluator = app.state.evaluator
+        return {
+            "status": "ok",
+            "service": settings.service_name,
+            "mode": evaluator.mode,
+            "judges": list(evaluator.judge_names),
+            "scorer": evaluator.scorer_name,
+            "evidence": evaluator.evidence_enabled,
+            "auth": bool(settings.clerk_secret_key),
+        }
 
     @app.exception_handler(RequestValidationError)
     async def validation_error_handler(

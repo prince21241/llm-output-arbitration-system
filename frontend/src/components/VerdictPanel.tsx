@@ -19,8 +19,9 @@ export function VerdictPanel({ result }: VerdictPanelProps) {
           {verdictLabel(result.verdict)}
         </p>
         <p className="mt-3 max-w-[65ch] text-sm leading-relaxed text-muted">
-          This is a signed-confidence average from mock judges, not a calibrated
-          probability.
+          {result.scorer === "ml"
+            ? "This is a model estimate from judge votes and evidence overlap. Retrain after you label live votes."
+            : "This is a signed-confidence average from the registered judges, not a calibrated probability."}
         </p>
       </div>
       <dl className="mt-6 grid grid-cols-3 gap-3 border-t border-line pt-5 md:col-span-5 md:mt-0 md:border-t-0 md:pt-0">

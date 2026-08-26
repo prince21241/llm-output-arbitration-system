@@ -7,8 +7,10 @@ without changing the FastAPI route.
 
 from __future__ import annotations
 
-from typing import Protocol, Sequence
+from collections.abc import Sequence
+from typing import Protocol
 
+from app.schemas.claim import Claim
 from app.schemas.judge import JudgeResult, Verdict
 
 
@@ -51,7 +53,11 @@ class ConfidenceScorer(Protocol):
     (or wrap ``predict`` behind it) so the evaluator stays unchanged.
     """
 
-    def support_probability(self, results: Sequence[JudgeResult]) -> float:
+    def support_probability(
+        self,
+        results: Sequence[JudgeResult],
+        claim: Claim | None = None,
+    ) -> float:
         """Return a preliminary support score in [0, 1]."""
 
 
@@ -66,7 +72,12 @@ class RuleBasedScorer:
     This is **not** a calibrated probability.
     """
 
-    def support_probability(self, results: Sequence[JudgeResult]) -> float:
+    def support_probability(
+        self,
+        results: Sequence[JudgeResult],
+        claim: Claim | None = None,
+    ) -> float:
+        del claim
         if not results:
             return 0.5
         total = sum(signed_contribution(item.verdict, item.confidence) for item in results)

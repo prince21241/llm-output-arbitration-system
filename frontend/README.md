@@ -1,6 +1,6 @@
 # Frontend
 
-Vite + React workspace for the Phase 1 evaluate API.
+Vite + React workspace for the evaluate API.
 
 ## Run
 
