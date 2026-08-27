@@ -6,16 +6,16 @@ import json
 
 import httpx
 import pytest
-from fastapi.testclient import TestClient
 
 from app.config import Settings
 from app.judges.claude_judge import CLAUDE_URL, ClaudeJudge
 from app.judges.gemini_judge import GeminiJudge
 from app.judges.llm import JudgeOutputError
 from app.judges.openai_judge import OPENAI_URL, OpenAIJudge
-from app.main import build_default_evaluator, create_app
+from app.main import build_default_evaluator
 from app.pipeline.judge_router import JudgeRouter
 from app.schemas.claim import Claim
+from conftest import make_test_client
 
 CLAIM = Claim(
     id="claim_1",
@@ -139,9 +139,9 @@ async def test_openai_rejects_missing_content() -> None:
             await judge.evaluate_claim(QUESTION, CLAIM)
 
 
-def test_health_reports_live_judge_names() -> None:
+def test_health_reports_live_judge_names(tmp_path) -> None:
     evaluator = build_default_evaluator(settings=Settings(openai_api_key="sk-test"))
-    client = TestClient(create_app(evaluator=evaluator))
+    client = make_test_client(tmp_path, evaluator=evaluator)
     response = client.get("/health")
     assert response.status_code == 200
     body = response.json()

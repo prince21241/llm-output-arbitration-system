@@ -41,3 +41,9 @@ Thumbs.db
 
 # Logs
 *.log
+
+# SQLite dockets (per-user local database)
+backend/data/*.sqlite3
+backend/data/*.sqlite3-*
+*.sqlite3
+*.sqlite3-*

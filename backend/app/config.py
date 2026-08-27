@@ -64,6 +64,7 @@ class Settings:
         "http://127.0.0.1:5173",
         "http://localhost:5173",
     )
+    database_path: str = "data/arbitrator.sqlite3"
 
     @classmethod
     def from_env(cls) -> Settings:
@@ -91,6 +92,8 @@ class Settings:
             clerk_secret_key=os.getenv("CLERK_SECRET_KEY", "").strip(),
             clerk_jwt_key=_clerk_jwt_key(),
             clerk_authorized_parties=_clerk_authorized_parties(),
+            database_path=os.getenv("DATABASE_PATH", "data/arbitrator.sqlite3").strip()
+            or "data/arbitrator.sqlite3",
         )
 
 

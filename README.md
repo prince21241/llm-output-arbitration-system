@@ -43,6 +43,7 @@ Key design choices:
 - Judges implement `BaseJudge.evaluate_claim`. `build_judges` registers `OpenAIJudge`, `ClaudeJudge`, and `GeminiJudge` when their keys are present. Otherwise it uses `MockJudgeA` and `MockJudgeB`.
 - Evidence is Wikipedia-only in this phase. Failures return an empty list so judging still runs.
 - Scoring implements `support_probability`. `MLConfidenceModel` loads `app/ml/artifacts/confidence_model.joblib` when `USE_ML_SCORER=true`. Otherwise `RuleBasedScorer` is used. Retrain with `python -m app.ml.train` from `backend/`.
+- Saved dockets live in SQLite (`DATABASE_PATH`). Every row is keyed by Clerk `user_id`. List, get, and delete queries always filter on that id, so one account cannot read another account's dockets.
 - Verdict thresholds (`0.75` supported / `0.35` incorrect) are configuration, not scattered constants.
 
 ## Installation
@@ -210,11 +211,11 @@ Exact floats depend on the scoring rule, but the shape is stable. With no API ke
 
 ## Current limitations
 
-- Claim extraction is rule-based (sentence splitting + regex), not an LLM.
-- Evidence is Wikipedia search snippets, not a full citation graph. Paid search is still later.
+- Claim extraction is rule-based (statement split + type tags), not an LLM. It keeps abbreviations together and skips interrogatives.
+- Evidence is Wikipedia search plus lead extracts, ranked by token overlap. Paid search is still later.
 - Live judges can read those snippets when keys are set. With mock judges, evidence is shown but does not change the hard-coded votes.
 - The ML scorer is trained on synthetic vote patterns plus a small labeled seed set. Retrain after live judges produce real labels.
-- No authentication, persistence, caching, or rate limits.
+- No rate limits or PostgreSQL yet. Saved dockets use SQLite scoped to the signed-in Clerk user.
 - Empty provider keys fall back to deterministic mocks with a tiny knowledge table.
 
 ## Frontend

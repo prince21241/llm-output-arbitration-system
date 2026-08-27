@@ -51,3 +51,14 @@ def require_auth(
             headers={"WWW-Authenticate": "Bearer"},
         )
     return user_id
+
+
+def require_user(user_id: Annotated[str | None, Depends(require_auth)]) -> str:
+    """Require a Clerk user id. Saved dockets are never shared across users."""
+    if not user_id:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Sign in to view saved dockets.",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    return user_id

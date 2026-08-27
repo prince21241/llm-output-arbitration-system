@@ -18,11 +18,22 @@ from app.config import get_settings
 from app.judges.mock_judge_a import MockJudgeA
 from app.judges.mock_judge_b import MockJudgeB
 from app.main import build_default_evaluator, create_app
+from app.storage.dockets import SqliteDocketStore
 
 get_settings.cache_clear()
 
 
+def make_test_client(
+    tmp_path,
+    evaluator=None,
+) -> TestClient:
+    store = SqliteDocketStore(tmp_path / "dockets.sqlite3")
+    resolved = evaluator or build_default_evaluator(
+        judges=[MockJudgeA(), MockJudgeB()],
+    )
+    return TestClient(create_app(evaluator=resolved, docket_store=store))
+
+
 @pytest.fixture
-def client() -> TestClient:
-    evaluator = build_default_evaluator(judges=[MockJudgeA(), MockJudgeB()])
-    return TestClient(create_app(evaluator=evaluator))
+def client(tmp_path) -> TestClient:
+    return make_test_client(tmp_path)

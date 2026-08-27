@@ -7,9 +7,10 @@ import { VerdictPanel } from "./VerdictPanel";
 type DocketProps = {
   loading: boolean;
   result: EvaluateResponse | null;
+  hasHistory?: boolean;
 };
 
-export function Docket({ loading, result }: DocketProps) {
+export function Docket({ loading, result, hasHistory = false }: DocketProps) {
   const reduceMotion = useReducedMotion();
 
   return (
@@ -22,7 +23,7 @@ export function Docket({ loading, result }: DocketProps) {
     >
       <h2 className="sr-only">Evaluation docket</h2>
       {loading ? <DocketSkeleton /> : null}
-      {!loading && !result ? <EmptyDocket /> : null}
+      {!loading && !result ? <EmptyDocket hasHistory={hasHistory} /> : null}
       {!loading && result ? (
         <motion.div
           className="grid gap-4"
@@ -38,7 +39,7 @@ export function Docket({ loading, result }: DocketProps) {
   );
 }
 
-function EmptyDocket() {
+function EmptyDocket({ hasHistory }: { hasHistory: boolean }) {
   return (
     <div className="flex min-h-[22rem] flex-col justify-center rounded-lg border border-dashed border-line bg-raised px-5 py-6 md:min-h-[28rem] md:px-6">
       <Scales
@@ -51,8 +52,9 @@ function EmptyDocket() {
         The docket is empty
       </p>
       <p className="mt-2 max-w-[52ch] text-base leading-relaxed text-muted">
-        Paste a question and the model answer, then evaluate. Claims, judge
-        votes, and a preliminary score will land here.
+        {hasHistory
+          ? "Paste a question and the model answer, then evaluate, or open a saved docket from the list."
+          : "Paste a question and the model answer, then evaluate. Claims, judge votes, and a preliminary score will land here."}
       </p>
     </div>
   );

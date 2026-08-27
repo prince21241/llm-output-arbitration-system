@@ -52,6 +52,18 @@ export type EvaluateResponse = {
   final_confidence: number;
   verdict: Verdict;
   scorer?: "rule" | "ml" | string;
+  id?: string | null;
+  saved_at?: string | null;
+};
+
+export type SavedDocket = {
+  id: string;
+  saved_at: string;
+  result: EvaluateResponse;
+};
+
+export type DocketListResponse = {
+  dockets: SavedDocket[];
 };
 
 export type HealthResponse = {

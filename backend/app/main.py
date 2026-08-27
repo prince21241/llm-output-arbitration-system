@@ -12,6 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from starlette.exceptions import HTTPException as StarletteHTTPException
 
+from app.api.dockets import router as dockets_router
 from app.api.evaluate import router as evaluate_router
 from app.config import Settings, get_settings
 from app.judges.base import BaseJudge
@@ -22,6 +23,7 @@ from app.pipeline.consensus import ConsensusEngine
 from app.pipeline.evaluator import Evaluator
 from app.pipeline.evidence import EvidenceRetriever, NullEvidenceRetriever, WikipediaEvidenceRetriever
 from app.pipeline.judge_router import JudgeRouter
+from app.storage.dockets import DocketStore, SqliteDocketStore
 from app.utils.scoring import ConfidenceScorer, RuleBasedScorer
 
 logger = logging.getLogger(__name__)
@@ -66,7 +68,10 @@ def build_default_evaluator(
     )
 
 
-def create_app(evaluator: Evaluator | None = None) -> FastAPI:
+def create_app(
+    evaluator: Evaluator | None = None,
+    docket_store: DocketStore | None = None,
+) -> FastAPI:
     """Build the FastAPI application with injected pipeline services."""
     settings = get_settings()
     logging.basicConfig(
@@ -85,6 +90,7 @@ def create_app(evaluator: Evaluator | None = None) -> FastAPI:
     )
     resolved_evaluator = evaluator or build_default_evaluator(settings)
     app.state.evaluator = resolved_evaluator
+    app.state.docket_store = docket_store or SqliteDocketStore(settings.database_path)
     logger.info(
         "Registered judges (%s): %s",
         resolved_evaluator.mode,
@@ -97,7 +103,7 @@ def create_app(evaluator: Evaluator | None = None) -> FastAPI:
             "http://localhost:5173",
         ],
         allow_credentials=True,
-        allow_methods=["GET", "POST", "OPTIONS"],
+        allow_methods=["GET", "POST", "DELETE", "OPTIONS"],
         allow_headers=["Content-Type", "Authorization"],
     )
 
@@ -112,6 +118,7 @@ def create_app(evaluator: Evaluator | None = None) -> FastAPI:
             "scorer": evaluator.scorer_name,
             "evidence": evaluator.evidence_enabled,
             "auth": bool(settings.clerk_secret_key),
+            "storage": "sqlite",
         }
 
     @app.exception_handler(RequestValidationError)
@@ -137,6 +144,7 @@ def create_app(evaluator: Evaluator | None = None) -> FastAPI:
         )
 
     app.include_router(evaluate_router, prefix="/api/v1", tags=["evaluation"])
+    app.include_router(dockets_router, prefix="/api/v1", tags=["dockets"])
     return app
 
 

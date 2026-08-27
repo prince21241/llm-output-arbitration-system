@@ -95,7 +95,11 @@ function ClaimExhibit({
             </li>
           ))}
         </ul>
-      ) : null}
+      ) : (
+        <p className="mt-4 max-w-[65ch] text-sm text-muted">
+          No Wikipedia snippets matched this claim.
+        </p>
+      )}
       {consensus ? (
         <p className="mt-3 font-mono text-xs tabular-nums text-muted">
           support {percent(consensus.support_probability)}

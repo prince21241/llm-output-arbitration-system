@@ -37,6 +37,19 @@ export function verdictClass(verdict: Verdict): string {
   return "text-uncertain";
 }
 
+export function formatSavedAt(iso: string): string {
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "Unknown time";
+  const delta = Date.now() - date.getTime();
+  if (delta >= 0 && delta < 60_000) return "Just now";
+  return date.toLocaleString(undefined, {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+}
+
 export const EXAMPLES = [
   {
     id: "incorrect-date",

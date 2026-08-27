@@ -8,7 +8,8 @@ from fastapi.testclient import TestClient
 from app.judges.base import BaseJudge
 from app.judges.mock_judge_a import MockJudgeA
 from app.judges.mock_judge_b import MockJudgeB
-from app.main import build_default_evaluator, create_app
+from app.main import build_default_evaluator
+from conftest import make_test_client
 from app.pipeline.judge_router import JudgeRouter
 from app.schemas.claim import Claim
 from app.schemas.judge import JudgeResult
@@ -133,11 +134,11 @@ async def test_judge_failure_does_not_crash_pipeline() -> None:
     assert all(item.verdict == "incorrect" for item in results)
 
 
-def test_evaluate_survives_one_failed_judge() -> None:
+def test_evaluate_survives_one_failed_judge(tmp_path) -> None:
     evaluator = build_default_evaluator(
         judges=[MockJudgeA(), FailingJudge(), MockJudgeB()],
     )
-    client = TestClient(create_app(evaluator=evaluator))
+    client = make_test_client(tmp_path, evaluator=evaluator)
     response = client.post("/api/v1/evaluate", json=IPHONE_PAYLOAD)
     assert response.status_code == 200
     body = response.json()

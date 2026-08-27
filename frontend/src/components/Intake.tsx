@@ -109,7 +109,7 @@ export function Intake({
             className="min-h-[10rem] w-full resize-y rounded-md border border-line bg-inset px-3 py-2.5 text-base text-ink placeholder:text-muted/80"
           />
           <p id={answerHelpId} className="text-sm text-muted">
-            Paste the generated answer. Each sentence becomes a claim.
+            Paste the generated answer. Each statement becomes a claim.
           </p>
           {fieldErrors.answer ? (
             <p id={answerErrorId} className="text-sm text-incorrect">

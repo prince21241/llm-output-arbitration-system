@@ -14,6 +14,7 @@ def test_health_endpoint_returns_ok(client: TestClient) -> None:
         "scorer": "rule",
         "evidence": False,
         "auth": False,
+        "storage": "sqlite",
     }
 
 

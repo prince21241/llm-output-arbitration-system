@@ -22,6 +22,54 @@ WIKIPEDIA_USER_AGENT = (
 )
 _TAG_RE = re.compile(r"<[^>]+>")
 _TOKEN_RE = re.compile(r"[a-z0-9]{3,}")
+_WORD_RE = re.compile(r"[A-Za-z][A-Za-z'-]*|\d+(?:\.\d+)?")
+_YEAR = re.compile(r"^(?:1[0-9]{3}|20[0-9]{2}|21[0-9]{2})$")
+_STOPWORDS = frozenset(
+    {
+        "the",
+        "a",
+        "an",
+        "and",
+        "or",
+        "but",
+        "is",
+        "are",
+        "was",
+        "were",
+        "be",
+        "been",
+        "being",
+        "of",
+        "in",
+        "on",
+        "at",
+        "to",
+        "for",
+        "from",
+        "by",
+        "as",
+        "with",
+        "that",
+        "this",
+        "it",
+        "its",
+        "their",
+        "his",
+        "her",
+        "has",
+        "had",
+        "have",
+        "not",
+        "no",
+        "yes",
+        "than",
+        "then",
+        "into",
+        "over",
+        "after",
+        "before",
+    }
+)
 
 
 class EvidenceRetriever(Protocol):
@@ -40,7 +88,7 @@ class NullEvidenceRetriever:
 
 
 class WikipediaEvidenceRetriever:
-    """Search the Wikipedia API and keep a lightweight snippet per hit."""
+    """Search Wikipedia and keep the best overlapping extracts per claim."""
 
     def __init__(
         self,
@@ -57,7 +105,7 @@ class WikipediaEvidenceRetriever:
         self._page_base = f"https://{language}.wikipedia.org/wiki/"
 
     async def retrieve(self, claim: Claim) -> list[Evidence]:
-        query = claim.text.strip()
+        query = wikipedia_query(claim.text)
         if not query:
             return []
         try:
@@ -65,36 +113,21 @@ class WikipediaEvidenceRetriever:
         except Exception:
             logger.exception("Wikipedia search failed for %s", claim.id)
             return []
-        hits = payload.get("query", {}).get("search", [])
-        if not isinstance(hits, list):
-            return []
-        evidence: list[Evidence] = []
-        for hit in hits[: self._limit]:
-            if not isinstance(hit, dict):
-                continue
-            title = str(hit.get("title", "")).strip()
-            snippet = _clean_snippet(str(hit.get("snippet", "")))
-            if not title or not snippet:
-                continue
-            url = self._page_base + quote(title.replace(" ", "_"), safe="_()'")
-            evidence.append(
-                Evidence(
-                    title=title,
-                    url=url,
-                    snippet=snippet,
-                    source="wikipedia",
-                    overlap=token_overlap(claim.text, snippet + " " + title),
-                )
-            )
-        return evidence
+        evidence = self._parse_payload(payload, claim)
+        return _rank_evidence(evidence, self._limit)
 
     async def _search(self, query: str) -> dict[str, object]:
+        fetch = max(self._limit, 5)
         params = {
             "action": "query",
-            "list": "search",
-            "srsearch": query[:300],
-            "srlimit": str(self._limit),
-            "srprop": "snippet",
+            "generator": "search",
+            "gsrsearch": query[:300],
+            "gsrlimit": str(fetch),
+            "prop": "extracts|info",
+            "exintro": "1",
+            "explaintext": "1",
+            "exsentences": "4",
+            "inprop": "url",
             "format": "json",
             "utf8": "1",
         }
@@ -117,6 +150,90 @@ class WikipediaEvidenceRetriever:
             return {}
         return body
 
+    def _parse_payload(self, payload: dict[str, object], claim: Claim) -> list[Evidence]:
+        query = payload.get("query")
+        if not isinstance(query, dict):
+            return []
+        pages = query.get("pages")
+        if isinstance(pages, dict):
+            return self._from_pages(pages, claim)
+        hits = query.get("search")
+        if isinstance(hits, list):
+            return self._from_search(hits, claim)
+        return []
+
+    def _from_pages(self, pages: dict[str, object], claim: Claim) -> list[Evidence]:
+        ordered = sorted(
+            (
+                page
+                for page in pages.values()
+                if isinstance(page, dict)
+            ),
+            key=lambda page: int(page.get("index") or 0),
+        )
+        evidence: list[Evidence] = []
+        for page in ordered:
+            title = str(page.get("title", "")).strip()
+            snippet = _clean_snippet(str(page.get("extract") or page.get("snippet") or ""))
+            if not title or not snippet:
+                continue
+            raw_url = str(page.get("fullurl") or "").strip()
+            url = raw_url or self._page_url(title)
+            evidence.append(
+                Evidence(
+                    title=title,
+                    url=url,
+                    snippet=snippet,
+                    source="wikipedia",
+                    overlap=token_overlap(claim.text, f"{snippet} {title}"),
+                )
+            )
+        return evidence
+
+    def _from_search(self, hits: list[object], claim: Claim) -> list[Evidence]:
+        evidence: list[Evidence] = []
+        for hit in hits:
+            if not isinstance(hit, dict):
+                continue
+            title = str(hit.get("title", "")).strip()
+            snippet = _clean_snippet(str(hit.get("snippet", "")))
+            if not title or not snippet:
+                continue
+            evidence.append(
+                Evidence(
+                    title=title,
+                    url=self._page_url(title),
+                    snippet=snippet,
+                    source="wikipedia",
+                    overlap=token_overlap(claim.text, f"{snippet} {title}"),
+                )
+            )
+        return evidence
+
+    def _page_url(self, title: str) -> str:
+        return self._page_base + quote(title.replace(" ", "_"), safe="_()'")
+
+
+def wikipedia_query(text: str) -> str:
+    """Build a tighter Wikipedia search string from a claim."""
+    tokens = _WORD_RE.findall(text.strip())
+    kept: list[str] = []
+    for index, token in enumerate(tokens):
+        lower = token.lower()
+        if lower in _STOPWORDS and not (index > 0 and token[:1].isupper()):
+            continue
+        if (
+            token[:1].isupper()
+            or _YEAR.fullmatch(token)
+            or any(char.isdigit() for char in token)
+            or (len(lower) > 3 and lower not in _STOPWORDS)
+        ):
+            kept.append(token)
+    query = " ".join(kept).strip()
+    if len(query) >= 8:
+        return query[:300]
+    return text.strip()[:300]
+
 
 def token_overlap(left: str, right: str) -> float:
     """Jaccard overlap of alphanumeric tokens of length 3+."""
@@ -137,6 +254,19 @@ def mean_evidence_overlap(evidence: Sequence[Evidence]) -> float:
     if not evidence:
         return 0.0
     return round(sum(item.overlap for item in evidence) / len(evidence), 4)
+
+
+def _rank_evidence(evidence: list[Evidence], limit: int) -> list[Evidence]:
+    unique: list[Evidence] = []
+    seen: set[str] = set()
+    for item in sorted(evidence, key=lambda row: row.overlap, reverse=True):
+        key = item.title.casefold()
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(item)
+    meaningful = [item for item in unique if item.overlap > 0]
+    return meaningful[: max(0, limit)]
 
 
 def _clean_snippet(raw: str) -> str:

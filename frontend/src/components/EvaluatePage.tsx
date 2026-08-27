@@ -1,10 +1,17 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@clerk/react";
 import { Header } from "./Header";
+import { HistoryList } from "./HistoryList";
 import { Intake } from "./Intake";
 import { Docket } from "./Docket";
-import { evaluateAnswer, fetchHealth } from "../lib/api";
-import type { EvaluateResponse } from "../lib/types";
+import {
+  deleteDocket,
+  evaluateAnswer,
+  fetchHealth,
+  listDockets,
+} from "../lib/api";
+import { readActiveId, writeActiveId } from "../lib/history";
+import type { EvaluateResponse, SavedDocket } from "../lib/types";
 
 const DRAFT_KEY = "arbitrator-draft";
 const MIN_LOADING_MS = 400;
@@ -25,8 +32,20 @@ function readDraft(): Draft {
   }
 }
 
+function focusDocket() {
+  requestAnimationFrame(() => {
+    document.getElementById("docket")?.focus({ preventScroll: false });
+    document.getElementById("docket")?.scrollIntoView({
+      behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth",
+      block: "start",
+    });
+  });
+}
+
 export function EvaluatePage() {
-  const { getToken } = useAuth();
+  const { getToken, userId } = useAuth();
   const [question, setQuestion] = useState(() => readDraft().question);
   const [answer, setAnswer] = useState(() => readDraft().answer);
   const [loading, setLoading] = useState(false);
@@ -36,6 +55,8 @@ export function EvaluatePage() {
     answer?: string;
   }>({});
   const [result, setResult] = useState<EvaluateResponse | null>(null);
+  const [history, setHistory] = useState<SavedDocket[]>([]);
+  const [activeId, setActiveId] = useState<string | null>(null);
   const [apiReady, setApiReady] = useState<boolean | null>(null);
   const [judgeMode, setJudgeMode] = useState<"live" | "mock" | undefined>(
     undefined,
@@ -45,6 +66,30 @@ export function EvaluatePage() {
   useEffect(() => {
     sessionStorage.setItem(DRAFT_KEY, JSON.stringify({ question, answer }));
   }, [question, answer]);
+
+  useEffect(() => {
+    if (!userId) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const token = await getToken();
+        const items = await listDockets(token);
+        if (cancelled) return;
+        setHistory(items);
+        const storedId = readActiveId(userId);
+        const match = items.find((item) => item.id === storedId) ?? items[0];
+        if (!match) return;
+        setActiveId(match.id);
+        setResult(match.result);
+        writeActiveId(userId, match.id);
+      } catch {
+        if (!cancelled) setHistory([]);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [userId, getToken]);
 
   useEffect(() => {
     let cancelled = false;
@@ -95,23 +140,53 @@ export function EvaluatePage() {
         await new Promise((resolve) => setTimeout(resolve, wait));
       }
       setResult(data);
-      requestAnimationFrame(() => {
-        document.getElementById("docket")?.focus({ preventScroll: false });
-        document.getElementById("docket")?.scrollIntoView({
-          behavior: window.matchMedia("(prefers-reduced-motion: reduce)")
-            .matches
-            ? "auto"
-            : "smooth",
-          block: "start",
-        });
-      });
+      if (data.id && userId) {
+        setActiveId(data.id);
+        writeActiveId(userId, data.id);
+      }
+      try {
+        setHistory(await listDockets(token));
+      } catch {
+        /* the new verdict is already on screen */
+      }
+      focusDocket();
     } catch (err) {
-      setResult(null);
       setError(
         err instanceof Error ? err.message : "Evaluation did not complete.",
       );
     } finally {
       setLoading(false);
+    }
+  }
+
+  function onOpenSaved(item: SavedDocket) {
+    if (!userId) return;
+    setQuestion(item.result.question);
+    setAnswer(item.result.answer);
+    setResult(item.result);
+    setActiveId(item.id);
+    writeActiveId(userId, item.id);
+    setError(null);
+    setFieldErrors({});
+    focusDocket();
+  }
+
+  async function onRemoveSaved(id: string) {
+    if (!userId) return;
+    try {
+      const token = await getToken();
+      await deleteDocket(id, token);
+      const next = history.filter((item) => item.id !== id);
+      setHistory(next);
+      if (activeId === id) {
+        setActiveId(null);
+        setResult(null);
+        writeActiveId(userId, null);
+      }
+    } catch (err) {
+      setError(
+        err instanceof Error ? err.message : "Could not remove that docket.",
+      );
     }
   }
 
@@ -125,7 +200,7 @@ export function EvaluatePage() {
       </a>
       <Header apiReady={apiReady} judgeMode={judgeMode} judges={judges} />
       <main className="mx-auto grid max-w-[1400px] grid-cols-1 gap-6 px-4 py-6 lg:grid-cols-12 lg:items-start">
-        <div className="lg:col-span-5">
+        <div className="grid gap-4 lg:col-span-5">
           <Intake
             question={question}
             answer={answer}
@@ -152,9 +227,19 @@ export function EvaluatePage() {
               setError(null);
             }}
           />
+          <HistoryList
+            items={history}
+            activeId={activeId}
+            onOpen={onOpenSaved}
+            onRemove={onRemoveSaved}
+          />
         </div>
         <div className="lg:col-span-7">
-          <Docket loading={loading} result={result} />
+          <Docket
+            loading={loading}
+            result={result}
+            hasHistory={history.length > 0}
+          />
         </div>
       </main>
     </div>

@@ -1,4 +1,9 @@
-import type { EvaluateResponse, HealthResponse } from "./types";
+import type {
+  DocketListResponse,
+  EvaluateResponse,
+  HealthResponse,
+  SavedDocket,
+} from "./types";
 
 export class ApiError extends Error {
   readonly status: number;
@@ -10,21 +15,24 @@ export class ApiError extends Error {
   }
 }
 
-export async function evaluateAnswer(
-  question: string,
-  answer: string,
-  token?: string | null,
-): Promise<EvaluateResponse> {
+function authHeaders(token?: string | null): Record<string, string> {
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
   if (token) {
     headers.Authorization = `Bearer ${token}`;
   }
+  return headers;
+}
 
+export async function evaluateAnswer(
+  question: string,
+  answer: string,
+  token?: string | null,
+): Promise<EvaluateResponse> {
   const response = await fetch("/api/v1/evaluate", {
     method: "POST",
-    headers,
+    headers: authHeaders(token),
     body: JSON.stringify({ question, answer }),
   });
 
@@ -33,6 +41,30 @@ export async function evaluateAnswer(
   }
 
   return (await response.json()) as EvaluateResponse;
+}
+
+export async function listDockets(token?: string | null): Promise<SavedDocket[]> {
+  const response = await fetch("/api/v1/dockets", {
+    headers: authHeaders(token),
+  });
+  if (!response.ok) {
+    throw new ApiError(await readApiError(response), response.status);
+  }
+  const body = (await response.json()) as DocketListResponse;
+  return Array.isArray(body.dockets) ? body.dockets : [];
+}
+
+export async function deleteDocket(
+  docketId: string,
+  token?: string | null,
+): Promise<void> {
+  const response = await fetch(`/api/v1/dockets/${encodeURIComponent(docketId)}`, {
+    method: "DELETE",
+    headers: authHeaders(token),
+  });
+  if (!response.ok) {
+    throw new ApiError(await readApiError(response), response.status);
+  }
 }
 
 export async function fetchHealth(): Promise<HealthResponse | null> {
@@ -67,6 +99,7 @@ async function readApiError(response: Response): Promise<string> {
   }
 
   if (response.status === 401) return "Sign in to evaluate answers.";
+  if (response.status === 404) return "Docket not found.";
   if (response.status === 422) return "Check the question and answer fields.";
   if (response.status >= 500) return "The evaluator failed. Try again.";
   return "Evaluation did not complete. Try again.";

@@ -8,7 +8,8 @@ from fastapi.testclient import TestClient
 from app.config import get_settings
 from app.judges.mock_judge_a import MockJudgeA
 from app.judges.mock_judge_b import MockJudgeB
-from app.main import build_default_evaluator, create_app
+from app.main import build_default_evaluator
+from conftest import make_test_client
 
 IPHONE_PAYLOAD = {
     "question": "When was the first iPhone released?",
@@ -16,9 +17,9 @@ IPHONE_PAYLOAD = {
 }
 
 
-def _client() -> TestClient:
+def _client(tmp_path) -> TestClient:
     evaluator = build_default_evaluator(judges=[MockJudgeA(), MockJudgeB()])
-    return TestClient(create_app(evaluator=evaluator))
+    return make_test_client(tmp_path, evaluator=evaluator)
 
 
 def test_evaluate_stays_public_without_clerk_secret(client: TestClient) -> None:
@@ -26,7 +27,7 @@ def test_evaluate_stays_public_without_clerk_secret(client: TestClient) -> None:
     assert response.status_code == 200
 
 
-def test_evaluate_rejects_missing_token_when_clerk_configured(monkeypatch) -> None:
+def test_evaluate_rejects_missing_token_when_clerk_configured(monkeypatch, tmp_path) -> None:
     monkeypatch.setenv("CLERK_SECRET_KEY", "sk_test_dummy")
     get_settings.cache_clear()
     monkeypatch.setattr(
@@ -34,14 +35,14 @@ def test_evaluate_rejects_missing_token_when_clerk_configured(monkeypatch) -> No
         lambda request, options: RequestState(status=AuthStatus.SIGNED_OUT),
     )
     try:
-        response = _client().post("/api/v1/evaluate", json=IPHONE_PAYLOAD)
+        response = _client(tmp_path).post("/api/v1/evaluate", json=IPHONE_PAYLOAD)
     finally:
         get_settings.cache_clear()
     assert response.status_code == 401
     assert response.json()["detail"] == "Sign in to evaluate answers."
 
 
-def test_evaluate_accepts_signed_in_clerk_user(monkeypatch) -> None:
+def test_evaluate_accepts_signed_in_clerk_user(monkeypatch, tmp_path) -> None:
     monkeypatch.setenv("CLERK_SECRET_KEY", "sk_test_dummy")
     get_settings.cache_clear()
     monkeypatch.setattr(
@@ -52,7 +53,7 @@ def test_evaluate_accepts_signed_in_clerk_user(monkeypatch) -> None:
         ),
     )
     try:
-        response = _client().post(
+        response = _client(tmp_path).post(
             "/api/v1/evaluate",
             json=IPHONE_PAYLOAD,
             headers={"Authorization": "Bearer test-token"},

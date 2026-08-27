@@ -58,3 +58,11 @@ class EvaluateResponse(BaseModel):
         default="rule",
         description="Scoring strategy used for support_probability (rule or ml).",
     )
+    id: str | None = Field(
+        default=None,
+        description="Saved docket id when the result was persisted for the signed-in user.",
+    )
+    saved_at: str | None = Field(
+        default=None,
+        description="UTC timestamp of the saved docket, if persisted.",
+    )
