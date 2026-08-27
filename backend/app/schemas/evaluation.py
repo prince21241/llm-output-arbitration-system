@@ -39,7 +39,7 @@ class OverallConsensus(BaseModel):
 
 
 class EvaluateResponse(BaseModel):
-    """Full Phase 1 evaluation payload."""
+    """Full evaluation payload returned by POST /api/v1/evaluate."""
 
     question: str
     answer: str
@@ -54,3 +54,7 @@ class EvaluateResponse(BaseModel):
         description="Preliminary overall confidence score (not a calibrated probability).",
     )
     verdict: Verdict
+    scorer: str = Field(
+        default="rule",
+        description="Scoring strategy used for support_probability (rule or ml).",
+    )

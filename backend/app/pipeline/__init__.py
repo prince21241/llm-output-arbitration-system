@@ -3,6 +3,7 @@
 from app.pipeline.claim_extractor import ClaimExtractor
 from app.pipeline.consensus import ConsensusEngine
 from app.pipeline.evaluator import EvaluationError, Evaluator
+from app.pipeline.evidence import NullEvidenceRetriever, WikipediaEvidenceRetriever
 from app.pipeline.judge_router import JudgeRouter
 
 __all__ = [
@@ -11,4 +12,6 @@ __all__ = [
     "EvaluationError",
     "Evaluator",
     "JudgeRouter",
+    "NullEvidenceRetriever",
+    "WikipediaEvidenceRetriever",
 ]

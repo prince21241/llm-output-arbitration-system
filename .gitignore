@@ -28,6 +28,10 @@ htmlcov/
 .ruff_cache/
 .hypothesis/
 
+# Frontend
+frontend/node_modules/
+frontend/dist/
+
 # Editors and OS
 .idea/
 .vscode/

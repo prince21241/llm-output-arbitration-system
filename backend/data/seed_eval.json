@@ -1,0 +1,134 @@
+[
+  {
+    "question": "When was the first iPhone released?",
+    "answer": "The first iPhone was released in 2005.",
+    "gold": "incorrect",
+    "note": "Launched in 2007."
+  },
+  {
+    "question": "When was the first iPhone released?",
+    "answer": "The first iPhone was released in 2007.",
+    "gold": "supported",
+    "note": "Correct year."
+  },
+  {
+    "question": "What is the capital of France?",
+    "answer": "The capital of France is Paris.",
+    "gold": "supported",
+    "note": ""
+  },
+  {
+    "question": "What is the capital of Australia?",
+    "answer": "The capital of Australia is Sydney.",
+    "gold": "incorrect",
+    "note": "Canberra."
+  },
+  {
+    "question": "How many planets are in the Solar System?",
+    "answer": "There are eight planets in the Solar System.",
+    "gold": "supported",
+    "note": "Pluto is a dwarf planet."
+  },
+  {
+    "question": "How many planets are in the Solar System?",
+    "answer": "There are nine planets in the Solar System.",
+    "gold": "incorrect",
+    "note": "Nine counted Pluto."
+  },
+  {
+    "question": "Who wrote Hamlet?",
+    "answer": "Hamlet was written by William Shakespeare.",
+    "gold": "supported",
+    "note": ""
+  },
+  {
+    "question": "Who wrote Hamlet?",
+    "answer": "Hamlet was written by Charles Dickens.",
+    "gold": "incorrect",
+    "note": ""
+  },
+  {
+    "question": "What is water made of?",
+    "answer": "Water is made of hydrogen and oxygen.",
+    "gold": "supported",
+    "note": ""
+  },
+  {
+    "question": "What is the boiling point of water at sea level?",
+    "answer": "Water boils at 100 degrees Celsius at sea level.",
+    "gold": "supported",
+    "note": ""
+  },
+  {
+    "question": "What is the boiling point of water at sea level?",
+    "answer": "Water boils at 50 degrees Celsius at sea level.",
+    "gold": "incorrect",
+    "note": ""
+  },
+  {
+    "question": "Is the Great Wall of China visible from the Moon with the naked eye?",
+    "answer": "The Great Wall of China is visible from the Moon with the naked eye.",
+    "gold": "incorrect",
+    "note": "Common myth."
+  },
+  {
+    "question": "What year did World War II end?",
+    "answer": "World War II ended in 1945.",
+    "gold": "supported",
+    "note": ""
+  },
+  {
+    "question": "What year did World War II end?",
+    "answer": "World War II ended in 1918.",
+    "gold": "incorrect",
+    "note": "That is World War I."
+  },
+  {
+    "question": "What is the largest planet in the Solar System?",
+    "answer": "Jupiter is the largest planet in the Solar System.",
+    "gold": "supported",
+    "note": ""
+  },
+  {
+    "question": "What is the largest planet in the Solar System?",
+    "answer": "Saturn is the largest planet in the Solar System.",
+    "gold": "incorrect",
+    "note": ""
+  },
+  {
+    "question": "Did humans land on the Moon in 1969?",
+    "answer": "NASA's Apollo 11 landed on the Moon in 1969.",
+    "gold": "supported",
+    "note": ""
+  },
+  {
+    "question": "Did humans land on the Moon in 1969?",
+    "answer": "No crewed spacecraft has ever reached the Moon.",
+    "gold": "incorrect",
+    "note": ""
+  },
+  {
+    "question": "What language is the most widely spoken native language?",
+    "answer": "Mandarin Chinese has the most native speakers.",
+    "gold": "supported",
+    "note": ""
+  },
+  {
+    "question": "What is the chemical symbol for gold?",
+    "answer": "The chemical symbol for gold is Au.",
+    "gold": "supported",
+    "note": ""
+  },
+  {
+    "question": "What is the chemical symbol for gold?",
+    "answer": "The chemical symbol for gold is Go.",
+    "gold": "incorrect",
+    "note": ""
+  },
+  {
+    "question": "How tall is Mount Everest, exactly, to the millimetre?",
+    "answer": "Mount Everest is exactly 8848.000 metres tall.",
+    "gold": "uncertain",
+    "note": "Surveys disagree on millimetre precision."
+  }
+]
