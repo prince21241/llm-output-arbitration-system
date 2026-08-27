@@ -1,20 +1,20 @@
 import { Scales } from "@phosphor-icons/react";
-import { ThemeToggle } from "./ThemeToggle";
+import { Link } from "react-router-dom";
 
 export function MissingClerkKeys() {
   return (
     <div className="min-h-[100dvh] bg-canvas text-ink">
       <header className="border-b border-line bg-canvas">
         <div className="mx-auto flex h-16 max-w-[1400px] items-center gap-3 px-4">
-          <p className="inline-flex items-center gap-2 text-ink">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 text-ink no-underline"
+          >
             <Scales size={22} weight="regular" aria-hidden="true" />
             <span className="text-[17px] font-semibold tracking-tight">
               Arbitrator
             </span>
-          </p>
-          <div className="ml-auto">
-            <ThemeToggle />
-          </div>
+          </Link>
         </div>
       </header>
       <main className="mx-auto max-w-[65ch] px-4 py-12">

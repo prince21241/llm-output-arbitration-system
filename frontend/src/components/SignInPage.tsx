@@ -6,7 +6,7 @@ export function SignInPage() {
   const { isLoaded, isSignedIn } = useAuth();
 
   if (isLoaded && isSignedIn) {
-    return <Navigate to="/welcome" replace />;
+    return <Navigate to="/evaluate" replace />;
   }
 
   return (
@@ -23,8 +23,8 @@ export function SignInPage() {
               routing="path"
               path="/sign-in"
               signUpUrl="/sign-up"
-              fallbackRedirectUrl="/welcome"
-              forceRedirectUrl="/welcome"
+              fallbackRedirectUrl="/evaluate"
+              forceRedirectUrl="/evaluate"
             />
           </div>
         </div>

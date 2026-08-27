@@ -2,7 +2,7 @@
 product: LLM Output Arbitration System
 accent: teal
 radius: 8px controls / 12px panels
-theme: auto (light + dark, no mid-page inversion)
+theme: dark only
 ---
 
 # DESIGN.md
@@ -19,26 +19,26 @@ Engineers and researchers checking whether an LLM answer is supported. They need
 
 ## Theme
 
-One theme family for the whole product. Default to `prefers-color-scheme`. Manual toggle persists in `localStorage`.
+Dark only. No light mode, no theme toggle, no `prefers-color-scheme` switching.
 
-Do not invert a section to the opposite theme. Tint within the same family only (`--bg` next to `--bg-raised`).
+Do not invert a section to a light canvas. Tint within the dark family only (`--bg` next to `--bg-raised`). The welcome page may use a deeper crimson black (`#080104`) over the hero video. The evaluate docket stays on the forensic dark tokens.
 
 ### Tokens
 
-| Token | Light | Dark |
-| --- | --- | --- |
-| `--bg` | `#eceef1` | `#121316` |
-| `--bg-raised` | `#f7f8f9` | `#1b1c20` |
-| `--bg-inset` | `#e4e6ea` | `#0e0f12` |
-| `--text` | `#1a1c1f` | `#f2f3f4` |
-| `--text-muted` | `#5c6168` | `#a7adb6` |
-| `--line` | `#d5d8de` | `#2a2d33` |
-| `--accent` | `#0f766e` | `#2dd4bf` |
-| `--accent-fg` | `#f7f8f9` | `#102422` |
-| `--supported` | `#047857` | `#34d399` |
-| `--incorrect` | `#b42318` | `#f87171` |
-| `--uncertain` | `#b45309` | `#fbbf24` |
-| `--focus` | `#0f766e` | `#2dd4bf` |
+| Token | Dark |
+| --- | --- |
+| `--bg` | `#121316` |
+| `--bg-raised` | `#1b1c20` |
+| `--bg-inset` | `#0e0f12` |
+| `--text` | `#f2f3f4` |
+| `--text-muted` | `#a7adb6` |
+| `--line` | `#2a2d33` |
+| `--accent` | `#2dd4bf` |
+| `--accent-fg` | `#102422` |
+| `--supported` | `#34d399` |
+| `--incorrect` | `#f87171` |
+| `--uncertain` | `#fbbf24` |
+| `--focus` | `#2dd4bf` |
 
 Accent is teal only. Verdict greens/reds/ambers are semantic status, used only on verdicts, votes, and related labels.
 

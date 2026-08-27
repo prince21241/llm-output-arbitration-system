@@ -1,20 +1,11 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="dark">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="color-scheme" content="light dark" />
-    <meta
-      name="theme-color"
-      content="#eceef1"
-      media="(prefers-color-scheme: light)"
-    />
-    <meta
-      name="theme-color"
-      content="#121316"
-      media="(prefers-color-scheme: dark)"
-    />
+    <meta name="color-scheme" content="dark" />
+    <meta name="theme-color" content="#121316" />
     <meta
       name="description"
       content="Evaluate AI answers by extracting claims and comparing independent judge verdicts."
@@ -22,19 +13,11 @@
     <title>Arbitrator</title>
     <script>
       (function () {
+        document.documentElement.dataset.theme = "dark";
+        document.documentElement.style.colorScheme = "dark";
         try {
-          var stored = localStorage.getItem("arbitrator-theme");
-          var theme =
-            stored === "light" || stored === "dark"
-              ? stored
-              : window.matchMedia("(prefers-color-scheme: dark)").matches
-                ? "dark"
-                : "light";
-          document.documentElement.dataset.theme = theme;
-          document.documentElement.style.colorScheme = theme;
-        } catch (e) {
-          document.documentElement.dataset.theme = "light";
-        }
+          localStorage.removeItem("arbitrator-theme");
+        } catch (e) {}
       })();
     </script>
   </head>

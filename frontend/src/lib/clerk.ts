@@ -1,17 +1,14 @@
-import type { Theme } from "./theme";
-
 export const CLERK_PUBLISHABLE_KEY = import.meta.env.VITE_CLERK_PUBLISHABLE_KEY ?? "";
 
-export function clerkAppearance(theme: Theme) {
-  const dark = theme === "dark";
+export function clerkAppearance() {
   return {
     variables: {
-      colorPrimary: dark ? "#2dd4bf" : "#0f766e",
-      colorBackground: dark ? "#1b1c20" : "#f7f8f9",
-      colorForeground: dark ? "#f2f3f4" : "#1a1c1f",
-      colorMutedForeground: dark ? "#a7adb6" : "#5c6168",
-      colorInput: dark ? "#0e0f12" : "#e4e6ea",
-      colorNeutral: dark ? "#a7adb6" : "#5c6168",
+      colorPrimary: "#2dd4bf",
+      colorBackground: "#1b1c20",
+      colorForeground: "#f2f3f4",
+      colorMutedForeground: "#a7adb6",
+      colorInput: "#0e0f12",
+      colorNeutral: "#a7adb6",
       borderRadius: "0.5rem",
       fontFamily: '"Outfit Variable", ui-sans-serif, system-ui, sans-serif',
     },
